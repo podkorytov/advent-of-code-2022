@@ -2,49 +2,26 @@
 
 def val_of_shape(letter):
     match letter:
-        case 'X':
+        case 'X' | 'A':
             return 1
-        case 'Y':
+        case 'Y' | 'B':
             return 2
-        case 'Z':
+        case 'Z' | 'C':
             return 3
         case _:
             return 0
 
+
 def val_of_set(player1, player2):
-    match player2:
-        case 'X':
-            match player1:
-                case 'A':
-                    return 3
-                case 'B':
-                    return 0
-                case 'C':
-                    return 6
-                case _:
-                    return 0
-        case 'Y':
-            match player1:
-                case 'A':
-                    return 6
-                case 'B':
-                    return 3
-                case 'C':
-                    return 0
-                case _:
-                    return 0
-        case 'Z':
-            match player1:
-                case 'A':
-                    return 0
-                case 'B':
-                    return 6
-                case 'C':
-                    return 3
-                case _:
-                    return 0
+    res = val_of_shape(player2) - val_of_shape(player1)
+    match res:
+        case 0:
+            return 3
+        case 1 | -2:
+            return 6
         case _:
             return 0
+
 
 def score(str):
     latters = str.split()
