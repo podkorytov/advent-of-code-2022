@@ -355,3 +355,4 @@ day4p2
 node
 package-lock.json
 package.json
+*.class
