@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 forest = []
 
 filename = 'inputs/input_day8.txt'
@@ -31,7 +33,7 @@ for c in 1..(cols-2) do
             next
         end 
 
-        #check row left
+        #check row right
         visible = 1
         for t in (c+1)..(cols-1) do
             if tree <= forest[r][t]
