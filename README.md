@@ -1,6 +1,7 @@
 # advent-of-code-2022
 I want to feel the Christmas spirit and try different languages. 🎅
-https://adventofcode.com 
+
+So I took on this challenge and solve puzzles https://adventofcode.com 
 
 
 ## List of Challenges
