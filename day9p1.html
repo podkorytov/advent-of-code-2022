@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+</head>
+
+<body>
+  <script>
+    let gameField;
+    let head = { x: 0, y: 0 };
+    let tail = { x: 0, y: 0 };
+
+    function getEmptyArea(size) {
+      let out = [];
+      for (let i = 0; i < size; i++) {
+        let row = [];
+        for (let j = 0; j < size; j++) {
+          row[j] = 0;
+        }
+        out[i] = row;
+      }
+      return out;
+    }
+
+    function emulateMovement(commands) {
+      commands.forEach((cmd) => {
+        let parts = cmd.split(" ");
+        let direction = parts[0].toLowerCase();
+        let steps = parseInt(parts[1]);
+        for (let i = 0; i < steps; i++) {
+          switch (direction) {
+            case 'r':
+              head.x++
+              break;
+            case 'l':
+              head.x--;
+              break;
+            case 'd':
+              head.y--;
+              break;
+            case 'u':
+              head.y++;
+              break;
+          }
+          goToHead();
+        }
+      });
+    }
+
+    function isNeedMove() {
+      if (head.x == tail.x) {
+        return Math.abs(head.y - tail.y) > 1;
+      } else if (head.y == tail.y) {
+        return Math.abs(head.x - tail.x) > 1;
+      } else {
+        return (Math.abs(head.x - tail.x) + Math.abs(head.y - tail.y)) > 2;
+      }
+    }
+
+    function goToHead() {
+      if (isNeedMove()) {
+        if (head.x > tail.x) {
+          tail.x++;
+        }
+        if (head.x < tail.x) {
+          tail.x--;
+        }
+        if (head.y > tail.y) {
+          tail.y++;
+        }
+        if (head.y < tail.y) {
+          tail.y--;
+        }
+      }
+      gameField[tail.x][tail.y] = 1;
+    }
+
+    function calculateFieldSize(commands) {
+      let r = 0;
+      let l = 0;
+      let t = 0;
+      let b = 0;
+      let x = 0;
+      let y = 0;
+
+      commands.forEach((cmd) => {
+        let parts = cmd.split(" ");
+        switch (parts[0].toLowerCase()) {
+          case 'r':
+            x += parseInt(parts[1])
+            if (x > r) r = x;
+            break;
+          case 'l':
+            x -= parseInt(parts[1])
+            if (x < l) l = x;
+            break;
+          case 'd':
+            y -= parseInt(parts[1])
+            if (y < b) b = y;
+            break;
+          case 'u':
+            y += parseInt(parts[1])
+            if (y > t) t = y;
+            break;
+        }
+      });
+
+      return Math.max(t, r, -l, -b);
+    }
+
+    function onCommandsSelected(fileInput) {
+      const files = fileInput.files;
+      if (files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById("commandsFilesInput").style.display = "none";
+          let commands = e.target.result.split(/\r?\n/);
+          let centerCoordinate = calculateFieldSize(commands);
+          gameField = getEmptyArea(2 * centerCoordinate + 1);
+
+          head.x = centerCoordinate;
+          head.y = centerCoordinate;
+          tail.x = centerCoordinate;
+          tail.y = centerCoordinate;
+          gameField[centerCoordinate][centerCoordinate] = 1;
+          emulateMovement(commands);
+          let result = gameField.reduce((partialSum, l) => partialSum + l.reduce((ps, e) => ps + e, 0), 0);
+          document.getElementById("result").innerHTML = result;
+        };
+        reader.readAsText(files[0], 'ISO-8859-1');
+      }
+    }
+  </script>
+
+  <form>
+    <input id="commandsFilesInput" type="file" onchange="onCommandsSelected(this)" />
+    <div id="result"></div>
+  </form>
+</body>
+
+</html>
