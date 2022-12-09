@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/two.js/0.8.10/two.min.js"></script>
+</head>
+
+<body>
+  <script>
+    let gameField;
+    let drawer;
+    let rope = [];
+    const ropeLength = 10;
+    const colors = [
+      "#020102",
+      "#190118",
+      "#330330",
+      "#4c0448",
+      "#660660",
+      "#7f0778",
+      "#990990",
+      "#b20aa8",
+      "#cc0cc0",
+      "#e50dd8",
+      "#0b5aa8",
+      "#1b436c",
+      "#4d91d5",
+      "#4dd578",
+      "#32583e",
+      "#4e3258",
+      "#9329b7",
+      "#b0b729",
+      "#53b729",
+      "#29b762",
+    ];
+    for (let i = 0; i < ropeLength; i++) {
+      rope[i] = { x: 0, y: 0 };
+    }
+
+    function getEmptyArea(size) {
+      let out = [];
+      for (let i = 0; i < size; i++) {
+        let row = [];
+        for (let j = 0; j < size; j++) {
+          row[j] = 0;
+        }
+        out[i] = row;
+      }
+      return out;
+    }
+
+    function animateMovement(commands) {
+      let counter = 0;
+      let interval = setInterval(function () {
+        let direction = commands[counter];
+        switch (direction) {
+          case 'r':
+            rope[0].x++
+            break;
+          case 'l':
+            rope[0].x--;
+            break;
+          case 'd':
+            rope[0].y--;
+            break;
+          case 'u':
+            rope[0].y++;
+            break;
+        }
+        for (let j = 0; j < ropeLength - 1; j++) {
+          catching(j);
+        }
+        drawRope();
+
+        counter++;
+        if (counter === commands.length) clearInterval(interval);
+      }, 20);
+    }
+
+    function emulateMovement(commands) {
+      commands.forEach((cmd) => {
+        let parts = cmd.split(" ");
+        let direction = parts[0].toLowerCase();
+        let steps = parseInt(parts[1]);
+        for (let i = 0; i < steps; i++) {
+          switch (direction) {
+            case 'r':
+              rope[0].x++
+              break;
+            case 'l':
+              rope[0].x--;
+              break;
+            case 'd':
+              rope[0].y--;
+              break;
+            case 'u':
+              rope[0].y++;
+              break;
+          }
+          for (let j = 0; j < ropeLength - 1; j++) {
+            catching(j);
+          }
+        }
+      });
+    }
+
+    function isNeedMove(head, tail) {
+      if (head.x == tail.x) {
+        return Math.abs(head.y - tail.y) > 1;
+      } else if (head.y == tail.y) {
+        return Math.abs(head.x - tail.x) > 1;
+      } else {
+        return (Math.abs(head.x - tail.x) + Math.abs(head.y - tail.y)) > 2;
+      }
+    }
+
+    function catching(index) {
+      let head = rope[index];
+      let tail = rope[index + 1];
+      if (isNeedMove(head, tail)) {
+        if (head.x > tail.x) {
+          tail.x++;
+        }
+        if (head.x < tail.x) {
+          tail.x--;
+        }
+        if (head.y > tail.y) {
+          tail.y++;
+        }
+        if (head.y < tail.y) {
+          tail.y--;
+        }
+      }
+      if (gameField[tail.x][tail.y] < (index + 1)) {
+        gameField[tail.x][tail.y] = index + 1;
+      }
+    }
+
+    function decomposeCommands(commands) {
+      let out = [];
+      commands.forEach((command) => {
+        let parts = command.split(" ");
+        let cmd = parts[0].toLowerCase();
+        let cnt = parseInt(parts[1]);
+        for (let j = 0; j < cnt; j++) {
+          out.push(cmd);
+        }
+      });
+      return out;
+    }
+
+    function calculateFieldSize(commands) {
+      let r = 0;
+      let l = 0;
+      let t = 0;
+      let b = 0;
+      let x = 0;
+      let y = 0;
+
+      commands.forEach((cmd) => {
+        let parts = cmd.split(" ");
+        switch (parts[0].toLowerCase()) {
+          case 'r':
+            x += parseInt(parts[1])
+            if (x > r) r = x;
+            break;
+          case 'l':
+            x -= parseInt(parts[1])
+            if (x < l) l = x;
+            break;
+          case 'd':
+            y -= parseInt(parts[1])
+            if (y < b) b = y;
+            break;
+          case 'u':
+            y += parseInt(parts[1])
+            if (y > t) t = y;
+            break;
+        }
+      });
+
+      let grid = {
+        left_bottom: {
+          x: l,
+          y: b,
+        },
+        right_top: {
+          x: r,
+          y: t,
+        },
+      };
+      console.log(grid);
+
+      return Math.max(t, r, -l, -b);
+    }
+
+    function moveRopeToPoint(x, y) {
+      for (let i = 0; i < ropeLength; i++) {
+        rope[i].x = x;
+        rope[i].y = y;
+      }
+    }
+
+    function onCommandsSelected(fileInput) {
+      const files = fileInput.files;
+      if (files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById("commandsFilesInput").style.display = "none";
+          startAnimation();
+
+          let commands = e.target.result.split(/\r?\n/);
+          let centerCoordinate = calculateFieldSize(commands);
+          gameField = getEmptyArea(2 * centerCoordinate + 1);
+
+          moveRopeToPoint(centerCoordinate, centerCoordinate);
+          gameField[centerCoordinate][centerCoordinate] = 9;
+          emulateMovement(commands);
+          let result = gameField.reduce((partialSum, l) => partialSum + l.reduce((ps, e) => ps + (e == 9 ? 1 : 0), 0), 0);
+          console.log(result);
+
+          drawField();
+          let simpleCommands = decomposeCommands(commands);
+          moveRopeToPoint(centerCoordinate, centerCoordinate);
+          animateMovement(simpleCommands);
+        };
+        reader.readAsText(files[0], 'ISO-8859-1');
+      }
+    }
+
+    function drawSquare(x, y, color) {
+      let squareCount = gameField.length;
+      let r = 4;
+
+      let circle = drawer.makeCircle(drawer.width / 2 + (x - squareCount / 2) * 2 * r, drawer.height / 2 + (y - squareCount / 2) * 2 * r, r);
+      circle.fill = color;
+      circle.noStroke();
+    }
+
+    function drawField() {
+      let squareCount = gameField.length;
+      for (let i = 0; i < squareCount; i++) {
+        for (let j = 0; j < squareCount; j++) {
+          drawSquare(i, j, 'lightblue');
+        }
+      }
+    }
+
+    function drawRope() {
+      for (let i = 0; i < ropeLength; i++) {
+        drawSquare(rope[i].x, rope[i].y, colors[i]);
+      }
+    }
+
+    function startAnimation() {
+      drawer = new Two({
+        fullscreen: true,
+        autostart: true
+      }).appendTo(document.body);
+    }
+  </script>
+
+  <form>
+    <input id="commandsFilesInput" type="file" onchange="onCommandsSelected(this)" />
+  </form>
+</body>
+
+</html>
