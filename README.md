@@ -15,3 +15,4 @@ So I took on this challenge and solve puzzles https://adventofcode.com
 - [Day 7](https://adventofcode.com/2022/day/7): Java
 - [Day 8](https://adventofcode.com/2022/day/8): Ruby
 - [Day 9](https://adventofcode.com/2022/day/9): JavaScript *(part 2 with animation)*
+- [Day 10](https://adventofcode.com/2022/day/10): PHP
