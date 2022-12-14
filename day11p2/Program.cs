@@ -1,27 +1,15 @@
-﻿public class Item
-{
-    public int Value { get; set; }
-
-    public Item(int value)
-    {
-        Value = value;
-    }
-}
+﻿using Extreme.Mathematics;
 
 public class ThrowItem
 {
-    public Item Item { get; set; }
+    public BigInteger Item { get; set; }
 
     public int MonkeyIndex { get; set; }
-
-    public ThrowItem(Item item)
-    {
-        Item = item;
-    }
 }
 
 public class Monkey
 {
+    public static int BigValue = 0;
     public enum OperationType
     {
         Multiply,
@@ -39,33 +27,32 @@ public class Monkey
     public int operationValue { get; set; }
     public int inspectionCount { get; set; }
 
-    public List<Item> Items { get; set; }
+    public List<BigInteger> Items { get; set; }
 
     public Monkey()
     {
-        Items = new List<Item> { };
+        Items = new List<BigInteger> { };
         inspectionCount = 0;
     }
 
-    public int processWorryLevel(int val)
+    public BigInteger processWorryLevel(BigInteger val)
     {
-        var outVal = val;
         switch (operationType)
         {
             case Monkey.OperationType.Add:
-                outVal += operationValue;
+                val += operationValue;
                 break;
             case Monkey.OperationType.Multiply:
-                outVal *= operationValue;
+                val *= operationValue;
                 break;
             case Monkey.OperationType.Squaring:
-                outVal = outVal * outVal;
+                val *= val;
                 break;
         }
-        return (int)Math.Floor((double)outVal / 3.0);
+        return val % BigValue;
     }
 
-    public bool testValue(int value)
+    public bool testValue(BigInteger value)
     {
         return value % DivisibleNumber == 0;
     }
@@ -74,9 +61,9 @@ public class Monkey
     {
         if (Items.Count > 0)
         {
-            var newItem = processWorryLevel(Items[0].Value);
-            var result = new ThrowItem(new Item(newItem));
-            result.MonkeyIndex = testValue(newItem) ? TrueThrowToMonkey : FalseThrowToMonkey;
+            var result = new ThrowItem();
+            result.Item = processWorryLevel(Items[0]);
+            result.MonkeyIndex = testValue(result.Item) ? TrueThrowToMonkey : FalseThrowToMonkey;
             Items.RemoveAt(0);
             inspectionCount++;
             return result;
@@ -87,7 +74,7 @@ public class Monkey
         }
     }
 
-    public void getNewItem(Item item)
+    public void getNewItem(BigInteger item)
     {
         Items.Add(item);
     }
@@ -99,7 +86,7 @@ public class Monkey
         Console.WriteLine($"If divisible by {DivisibleNumber} then throw to {TrueThrowToMonkey} else to {FalseThrowToMonkey}");
         if (Items.Count > 0)
         {
-            var ids = String.Join(", ", Items.Select(i => i.Value.ToString()).ToList());
+            var ids = String.Join(", ", Items.Select(i => i.ToString()).ToList());
             Console.WriteLine($"Items list {ids}");
         }
         else
@@ -113,6 +100,10 @@ class Program
 {
     public static void Main(string[] args)
     {
+        var watch = new System.Diagnostics.Stopwatch();
+        var stepWatch = new System.Diagnostics.Stopwatch();
+        watch.Start();
+
         var monkeys = new List<Monkey> { };
         var buf = new List<String> { };
         foreach (string line in System.IO.File.ReadLines("../inputs/input_day11.txt"))
@@ -131,9 +122,17 @@ class Program
         {
             monkeys.Add(CreateMonkey(buf));
         }
+        // add big part 
+        var coof = 1;
+        foreach (int d in monkeys.Select(m => m.DivisibleNumber))
+        {
+            coof *= d;
+        }
+        Monkey.BigValue = coof;
 
         // Main circle 
-        for (var i = 0; i < 20; i++)
+        stepWatch.Start();
+        for (var i = 0; i < 10000; i++)
         {
             monkeys.ForEach((monkey) =>
             {
@@ -146,9 +145,12 @@ class Program
             });
         }
         var monkeyInspects = monkeys.Select(m => m.inspectionCount).ToList().OrderByDescending(i => i).ToArray();
-        var monkeyBusiness = monkeyInspects[0] * monkeyInspects[1];
-        Console.WriteLine($"{monkeyBusiness}");
+        Console.WriteLine(String.Join(", ", monkeyInspects));
+        var monkeyBusiness = (BigInteger)monkeyInspects[0] * (BigInteger)monkeyInspects[1];
+        Console.WriteLine(monkeyBusiness);
 
+        watch.Stop();
+        Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
     }
 
     public static Monkey CreateMonkey(List<String> data)
@@ -158,7 +160,7 @@ class Program
         var itemValues = data[1].Split(":")[1].Trim().Split(",");
         foreach (var item in itemValues)
         {
-            monkey.Items.Add(new Item(Int32.Parse(item)));
+            monkey.Items.Add(Int32.Parse(item));
         }
         // parse operation 
         var operationParts = data[2].Split(":")[1].Trim().Split(" ");
